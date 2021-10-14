@@ -52,7 +52,7 @@ func main() {
 	bucket := envOrDefault("S3PROXY_BUCKET", "")
 
 	if bucket == "" {
-		log.Panic("You need to provide S3PROXY_BUCKET")
+		log.Fatal("You need to provide S3PROXY_BUCKET")
 	}
 
 	sess := session.Must(session.NewSession(&aws.Config{
