@@ -27,13 +27,14 @@ func handler(w http.ResponseWriter, r *http.Request, svc *s3.S3, bucket string) 
 		Key:    aws.String(key),
 	}
 	obj, err := svc.GetObject(input)
-	defer obj.Body.Close()
-
 	if err != nil {
+		log.Printf("Error while getting %q: %s\n", key, err.Error())
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte("Forbidden"))
 		return
 	}
+
+	defer obj.Body.Close()
 
 	w.Header().Set("Content-Type", *obj.ContentType)
 
