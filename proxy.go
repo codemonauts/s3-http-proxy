@@ -1,8 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +13,8 @@ import (
 )
 
 func handler(w http.ResponseWriter, r *http.Request, svc *s3.S3, bucket string) {
+	defer r.Body.Close()
+
 	key := r.URL.Path
 	if key == "/" {
 		w.WriteHeader(http.StatusForbidden)
@@ -25,17 +27,18 @@ func handler(w http.ResponseWriter, r *http.Request, svc *s3.S3, bucket string) 
 		Key:    aws.String(key),
 	}
 	obj, err := svc.GetObject(input)
+	defer obj.Body.Close()
 
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte("Forbidden"))
 		return
 	}
-	w.Header().Set("Content-Type", *obj.ContentType)
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(obj.Body)
-	w.Write(buf.Bytes())
 
+	w.Header().Set("Content-Type", *obj.ContentType)
+
+	// Directly copy all bytes from the S3 object into the HTTP reponse
+	io.Copy(w, obj.Body)
 }
 
 func envOrDefault(name string, defaultValue string) string {
