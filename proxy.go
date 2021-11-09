@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -18,6 +19,7 @@ var (
 	s3Service  *s3.S3
 	bucketName string
 	cachePath  string
+	cacheLimit int64
 )
 
 // getFile checks if we have a local copy otherwise downloads from S3
@@ -107,6 +109,11 @@ func getFileFromBucket(key string) (FileWrapper, error) {
 	}
 
 	if cachePath != "" {
+		if *obj.ContentLength > cacheLimit {
+			log.Infof("Will not cache %q because it's to big (%d byte)\n", key, *obj.ContentLength)
+			return s3File, nil
+		}
+
 		path, err := saveFileToCache(key, obj)
 		if err != nil {
 			// We couldn't save the file to the cache but still return the Get response from S3
@@ -200,6 +207,7 @@ func main() {
 	port := envOrDefault("S3PROXY_PORT", "3000")
 	bucketName = envOrDefault("S3PROXY_BUCKET", "")
 	cachePath = envOrDefault("S3PROXY_CACHE", "")
+	cacheLimitEnv := envOrDefault("S3PROXY_SIZELIMIT", "104857600") // Default: 10 MB
 	logLevel := envOrDefault("S3PROXY_LOGGING", "WARN")
 
 	l, err := log.ParseLevel(logLevel)
@@ -225,6 +233,11 @@ func main() {
 
 	}
 
+	cacheLimit, err = strconv.ParseInt(cacheLimitEnv, 10, 64)
+	if err != nil {
+		log.Fatal("Could not parse the value of S3PROXY_SIZELIMIT into an integer")
+	}
+
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region: aws.String(region),
 	}))
@@ -232,6 +245,6 @@ func main() {
 
 	http.HandleFunc("/", handler)
 
-	log.Info("Listening on :%s \n", port)
+	log.Infof("Listening on :%s \n", port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
 }
