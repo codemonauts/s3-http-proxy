@@ -41,7 +41,7 @@ All configuration happens via environment variables.
 | S3PROXY_BUCKET    |    x     | -                   | Name of the bucket                                           |
 | S3PROXY_REGION    |          | "eu-central-1"      | Region of the bucket                                         |
 | S3PROXY_PORT      |          | 3000                | Listening port of the application                            |
-| S3PROXY_CACHING   |          | ""                  | Set this to a path if you wan't the files to be cached       |
+| S3PROXY_CACHE     |          | ""                  | Set this to a path if you wan't the files to be cached       |
 | S3PROXY_SIZELIMIT |          | 104857600 ( ~100MB) | Only files smaller than this are cached. Set to 0 to disable |
 | S3PROXY_LOGGING   |          | "WARN"              | Loglevel ("ERROR","WARN","INFO","DEBUG")                     |
 
